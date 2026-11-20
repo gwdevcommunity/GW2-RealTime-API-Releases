@@ -15,7 +15,9 @@
 #define EV_RTAPI_GROUP_MEMBER_LEFT    "RTAPI_GROUP_MEMBER_LEFT"    // Payload is RTAPI::GroupMember*
 #define EV_RTAPI_GROUP_MEMBER_UPDATED "RTAPI_GROUP_MEMBER_UPDATED" // Payload is RTAPI::GroupMember*
 
-#include <cstdint>
+
+
+#include <stdint.h>
 
 ///----------------------------------------------------------------------------------------------------
 /// EGameState Enumeration
@@ -119,6 +121,203 @@ typedef struct GroupMember
 	uint32_t IsCommander  : 1;
 	uint32_t IsLieutenant : 1;
 } GroupMember;
+
+///----------------------------------------------------------------------------------------------------
+/// EAgentType Enumeration
+///----------------------------------------------------------------------------------------------------
+enum EAgentType
+{
+	AT_Character,
+	AT_Gadget,
+	AT_AttackTarget
+};
+
+///----------------------------------------------------------------------------------------------------
+/// EAttitude Enumeration
+///----------------------------------------------------------------------------------------------------
+enum EAttitude
+{
+	ATT_Friendly,
+	ATT_Hostile,
+	ATT_Indifferent,
+	ATT_Neutral
+};
+
+///----------------------------------------------------------------------------------------------------
+/// CombatAgent Struct
+/// 	Payload of the EV_RTAPI_COMBAT_AGENT_* events.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatAgent
+{
+	uint32_t Size;             // sizeof(CombatAgent) as raised. Fields are only ever appended.
+	uint32_t ID;               // Agent ID, unique within the current map instance.
+	uint32_t Type;             // EAgentType
+	uint32_t SpeciesID;        // Character: Species ID; Gadget/AttackTarget: Gadget ID.
+	uint32_t OwnerID;          // Agent ID of the top-most owner, if IsMinion; otherwise 0.
+	uint32_t Attitude;         // EAttitude. Characters only. Towards the player. Checked on every event, a change raises AGENT_UPDATED.
+	uint32_t Profession;       // 1-9 = Profession, if IsPlayer; otherwise 0.
+	char     Name[140];        // UTF-8. Empty until decoded (see EV_RTAPI_COMBAT_AGENT_UPDATED), and for hostile players.
+	char     AccountName[140]; // UTF-8. Only for players known to the player, e.g. party, squad, contacts. Never for hostile players.
+	uint32_t IsSelf   : 1;     // Is the player's own character.
+	uint32_t IsPlayer : 1;
+	uint32_t IsMinion : 1;     // Is owned by another agent, e.g. a pet, clone or summon.
+} CombatAgent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatSkill Struct
+/// 	Payload of the EV_RTAPI_COMBAT_SKILL_* events.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatSkill
+{
+	uint32_t Size;      // sizeof(CombatSkill) as raised. Fields are only ever appended.
+	uint32_t ID;
+	char     Name[140]; // UTF-8. Empty until decoded, see EV_RTAPI_COMBAT_SKILL_UPDATED.
+} CombatSkill;
+
+///----------------------------------------------------------------------------------------------------
+/// ECombatEventType Enumeration
+///----------------------------------------------------------------------------------------------------
+enum ECombatEventType
+{
+	CET_Block,
+	CET_Breakbar,
+	CET_Combo,
+	CET_Death,
+	CET_Down,
+	CET_Energy,
+	CET_Evade,
+	CET_Experience,
+	CET_Health,
+	CET_Interrupt,
+	CET_InvulnerabilityAbsorb,
+	CET_Karma,
+	CET_Luck,
+	CET_MissedBySource,
+	CET_MissedTarget,
+	CET_PvPScore,
+	CET_Resist,
+	CET_SkillAbsorbed,
+	CET_SkillBegin,
+	CET_SkillEnd,
+	CET_SkillObstructed,
+	CET_SkillOutOfRange,
+	CET_WvWScoreRed,
+	CET_WvWScoreBlue,
+	CET_WvWScoreGreen,
+	CET_WvWExperience
+};
+
+///----------------------------------------------------------------------------------------------------
+/// CombatEvent Struct
+/// 	Common to all combat events, and the payload of events without values.
+/// 	Only contains events from the player's own combat log.
+/// 	Every payload is only valid for the duration of the event callback.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatEvent
+{
+	uint32_t Size;                  // sizeof the full payload, e.g. sizeof(CombatHealthEvent). Fields are only ever appended.
+	uint32_t Type;                  // ECombatEventType
+	uint64_t Time;                  // Unix timestamp in milliseconds.
+	uint32_t SourceID;              // Agent ID, see EV_RTAPI_COMBAT_AGENT_*. 0 if there is none.
+	uint32_t DestinationID;         // Agent ID, see EV_RTAPI_COMBAT_AGENT_*. 0 if there is none.
+	uint32_t SkillID;               // Skill ID, see EV_RTAPI_COMBAT_SKILL_*. 0 if there is none.
+	uint32_t IsBonus           : 1;
+	uint32_t IsCritical        : 1;
+	uint32_t IsFumble          : 1;
+	uint32_t IsConditionDamage : 1;
+} CombatEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatBreakbarEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_BREAKBAR.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatBreakbarEvent
+{
+	CombatEvent Base;
+	float       Points; // Breakbar change, in the game's breakbar points.
+} CombatBreakbarEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatEnergyEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_ENERGY.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatEnergyEvent
+{
+	CombatEvent Base;
+	float       Energy;
+} CombatEnergyEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatExperienceEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_EXPERIENCE.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatExperienceEvent
+{
+	CombatEvent Base;
+	float       Experience;
+	float       BonusExperience;
+} CombatExperienceEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatHealthEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_HEALTH.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatHealthEvent
+{
+	CombatEvent Base;
+	float       Health;  // Change in health. Negative is damage, positive is healing.
+	float       Barrier; // Change in barrier. Negative is damage, positive is barrier gained.
+} CombatHealthEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatKarmaEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_KARMA.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatKarmaEvent
+{
+	CombatEvent Base;
+	float       Karma;
+} CombatKarmaEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatLuckEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_LUCK.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatLuckEvent
+{
+	CombatEvent Base;
+	float       Luck;
+} CombatLuckEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatResistEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_RESIST.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatResistEvent
+{
+	CombatEvent Base;
+	uint32_t    Effect; // Game ID of the resisted effect, e.g. a condition or crowd control.
+} CombatResistEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatScoreEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_PVP_SCORE and EV_RTAPI_COMBAT_WVW_SCORE.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatScoreEvent
+{
+	CombatEvent Base;
+	int32_t     Score;
+} CombatScoreEvent;
+
+///----------------------------------------------------------------------------------------------------
+/// CombatWvWExperienceEvent Struct
+/// 	Payload of EV_RTAPI_COMBAT_WVW_EXPERIENCE.
+///----------------------------------------------------------------------------------------------------
+typedef struct CombatWvWExperienceEvent
+{
+	CombatEvent Base;
+	float       Experience;
+} CombatWvWExperienceEvent;
 
 ///----------------------------------------------------------------------------------------------------
 /// RealTimeData Struct
