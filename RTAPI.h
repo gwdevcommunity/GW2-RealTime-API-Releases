@@ -11,11 +11,39 @@
 
 #define RTAPI_SIG                     0x2501A02C
 #define DL_RTAPI                      "RTAPI"                      // DataLink is RealTimeData struct
-#define EV_RTAPI_GROUP_MEMBER_JOINED  "RTAPI_GROUP_MEMBER_JOINED"  // Payload is RTAPI::GroupMember*
-#define EV_RTAPI_GROUP_MEMBER_LEFT    "RTAPI_GROUP_MEMBER_LEFT"    // Payload is RTAPI::GroupMember*
-#define EV_RTAPI_GROUP_MEMBER_UPDATED "RTAPI_GROUP_MEMBER_UPDATED" // Payload is RTAPI::GroupMember*
+#define EV_RTAPI_GROUP_MEMBER_JOINED  "RTAPI_GROUP_MEMBER_JOINED"  // Payload is GroupMember*
+#define EV_RTAPI_GROUP_MEMBER_LEFT    "RTAPI_GROUP_MEMBER_LEFT"    // Payload is GroupMember*
+#define EV_RTAPI_GROUP_MEMBER_UPDATED "RTAPI_GROUP_MEMBER_UPDATED" // Payload is GroupMember*
 
-
+#define EV_RTAPI_COMBAT_AGENT_ADDED            "RTAPI_COMBAT_AGENT_ADDED"            // Payload is CombatAgent*. Agent seen for the first time. Raised before any event that references it.
+#define EV_RTAPI_COMBAT_AGENT_UPDATED          "RTAPI_COMBAT_AGENT_UPDATED"          // Payload is CombatAgent*. Agent data changed, e.g. its name was decoded.
+#define EV_RTAPI_COMBAT_AGENT_REMOVED          "RTAPI_COMBAT_AGENT_REMOVED"          // Payload is CombatAgent*. Agent left the combat log, or the map changed. Its ID may be reused after.
+#define EV_RTAPI_COMBAT_SKILL_ADDED            "RTAPI_COMBAT_SKILL_ADDED"            // Payload is CombatSkill*. Skill seen for the first time. Raised before any event that references it.
+#define EV_RTAPI_COMBAT_SKILL_UPDATED          "RTAPI_COMBAT_SKILL_UPDATED"          // Payload is CombatSkill*. Skill data changed, e.g. its name was decoded.
+#define EV_RTAPI_COMBAT_BLOCK                  "RTAPI_COMBAT_BLOCK"                  // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_BREAKBAR               "RTAPI_COMBAT_BREAKBAR"               // Payload is CombatBreakbarEvent*.
+#define EV_RTAPI_COMBAT_COMBO                  "RTAPI_COMBAT_COMBO"                  // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_DEATH                  "RTAPI_COMBAT_DEATH"                  // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_DOWN                   "RTAPI_COMBAT_DOWN"                   // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_ENERGY                 "RTAPI_COMBAT_ENERGY"                 // Payload is CombatEnergyEvent*.
+#define EV_RTAPI_COMBAT_EVADE                  "RTAPI_COMBAT_EVADE"                  // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_EXPERIENCE             "RTAPI_COMBAT_EXPERIENCE"             // Payload is CombatExperienceEvent*.
+#define EV_RTAPI_COMBAT_HEALTH                 "RTAPI_COMBAT_HEALTH"                 // Payload is CombatHealthEvent*.
+#define EV_RTAPI_COMBAT_INTERRUPT              "RTAPI_COMBAT_INTERRUPT"              // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_INVULNERABILITY_ABSORB "RTAPI_COMBAT_INVULNERABILITY_ABSORB" // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_KARMA                  "RTAPI_COMBAT_KARMA"                  // Payload is CombatKarmaEvent*.
+#define EV_RTAPI_COMBAT_LUCK                   "RTAPI_COMBAT_LUCK"                   // Payload is CombatLuckEvent*.
+#define EV_RTAPI_COMBAT_MISSED_BY_SOURCE       "RTAPI_COMBAT_MISSED_BY_SOURCE"       // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_MISSED_TARGET          "RTAPI_COMBAT_MISSED_TARGET"          // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_PVP_SCORE              "RTAPI_COMBAT_PVP_SCORE"              // Payload is CombatScoreEvent*.
+#define EV_RTAPI_COMBAT_RESIST                 "RTAPI_COMBAT_RESIST"                 // Payload is CombatResistEvent*.
+#define EV_RTAPI_COMBAT_SKILL_ABSORBED         "RTAPI_COMBAT_SKILL_ABSORBED"         // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_SKILL_BEGIN            "RTAPI_COMBAT_SKILL_BEGIN"            // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_SKILL_END              "RTAPI_COMBAT_SKILL_END"              // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_SKILL_OBSTRUCTED       "RTAPI_COMBAT_SKILL_OBSTRUCTED"       // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_SKILL_OUT_OF_RANGE     "RTAPI_COMBAT_SKILL_OUT_OF_RANGE"     // Payload is CombatEvent*.
+#define EV_RTAPI_COMBAT_WVW_SCORE              "RTAPI_COMBAT_WVW_SCORE"              // Payload is CombatScoreEvent*. Type is CET_WvWScoreRed, CET_WvWScoreBlue or CET_WvWScoreGreen.
+#define EV_RTAPI_COMBAT_WVW_EXPERIENCE         "RTAPI_COMBAT_WVW_EXPERIENCE"         // Payload is CombatWvWExperienceEvent*.
 
 #include <stdint.h>
 
