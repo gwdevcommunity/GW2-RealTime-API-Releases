@@ -14,6 +14,11 @@
 #define EV_RTAPI_GROUP_MEMBER_JOINED  "RTAPI_GROUP_MEMBER_JOINED"  // Payload is RTAPI::GroupMember*
 #define EV_RTAPI_GROUP_MEMBER_LEFT    "RTAPI_GROUP_MEMBER_LEFT"    // Payload is RTAPI::GroupMember*
 #define EV_RTAPI_GROUP_MEMBER_UPDATED "RTAPI_GROUP_MEMBER_UPDATED" // Payload is RTAPI::GroupMember*
+#define DL_RTAPI_GROUP                "RTAPI_GROUP"                // DataLink is RTAPI::RealTimeGroupData struct. Frame-synchronized like DL_RTAPI.
+
+#define EV_RTAPI_BUILD_CHANGED        "RTAPI_BUILD_CHANGED"        // Payload is RTAPI::BuildData*. Raised on change, and to addons loaded later.
+#define EV_RTAPI_GEAR_CHANGED         "RTAPI_GEAR_CHANGED"         // Payload is RTAPI::GearData*. Raised on change, and to addons loaded later.
+#define EV_RTAPI_GUILDS_CHANGED       "RTAPI_GUILDS_CHANGED"       // Payload is RTAPI::GuildList*. Raised on change, and to addons loaded later.
 
 
 
@@ -156,6 +161,33 @@ namespace RTAPI
 		uint32_t IsInInstance : 1;    // Is in the same map instance as the player.
 		uint32_t IsCommander  : 1;
 		uint32_t IsLieutenant : 1;
+
+		/* Appended. Only filled if RealTimeData::Size is not 0. */
+		uint32_t IsAlive         : 1; // Only valid if IsInInstance.
+		uint32_t IsDowned        : 1; // Only valid if IsInInstance.
+		uint32_t IsInstanceOwner : 1; // Owns the map instance the group is in.
+		char     Nickname[140];       // UTF-8. The player's contact nickname for this account; empty if none.
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// GroupMemberVitals Struct
+	///----------------------------------------------------------------------------------------------------
+	struct GroupMemberVitals
+	{
+		char     AccountName[140]; // Matches GroupMember::AccountName.
+		float    Health;           // Percent, 0-100. Currently whole numbers, as the game shows them. 0 if not in the player's instance.
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// RealTimeGroupData Struct
+	/// 	DataLink DL_RTAPI_GROUP. Frame-synchronized.
+	///----------------------------------------------------------------------------------------------------
+	struct RealTimeGroupData
+	{
+		uint32_t          Size;        // sizeof(RealTimeGroupData) as written. 0 when RTAPI is unloaded.
+		uint32_t          Count;       // Used entries in Members.
+		GroupMemberVitals Members[50];
+		uint32_t          Frame; // Frame counter. Odd while RTAPI writes a frame, even when it is complete. See README, reading from other threads.
 	};
 
 	///----------------------------------------------------------------------------------------------------
@@ -356,6 +388,127 @@ namespace RTAPI
 	};
 
 	///----------------------------------------------------------------------------------------------------
+	/// Specialization Struct
+	///----------------------------------------------------------------------------------------------------
+	struct Specialization
+	{
+		uint32_t ID;        // Specialization ID, 0 if the line is empty.
+		uint32_t Traits[3]; // Trait IDs of the selected major traits: adept, master, grandmaster. 0 if none.
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// BuildData Struct
+	/// 	Payload of EV_RTAPI_BUILD_CHANGED.
+	///----------------------------------------------------------------------------------------------------
+	struct BuildData
+	{
+		uint32_t       Size;               // sizeof(BuildData) as raised. Fields are only ever appended.
+		uint32_t       TemplateIndex;      // 0-based build template tab.
+		uint32_t       Profession;         // 1-9 = Profession.
+		Specialization Specializations[3];
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// EGearSlot Enumeration
+	///----------------------------------------------------------------------------------------------------
+	enum class EGearSlot : uint32_t
+	{
+		Helm,
+		Shoulders,
+		Coat,
+		Gloves,
+		Leggings,
+		Boots,
+		Back,
+		Amulet,
+		Accessory1,
+		Accessory2,
+		Ring1,
+		Ring2,
+		WeaponA1,
+		WeaponA2,
+		WeaponB1,
+		WeaponB2,
+		AquaticHelm,
+		AquaticWeaponA,
+		AquaticWeaponB,
+		Relic,
+		COUNT
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// GearSlot Struct
+	/// 	IDs match the official API (/v2/items, /v2/itemstats).
+	///----------------------------------------------------------------------------------------------------
+	struct GearSlot
+	{
+		uint32_t ItemID;       // 0 if the slot is empty.
+		uint32_t StatID;       // Itemstat ID, 0 if none.
+		uint32_t Upgrades[2];  // Rune, or sigils. 0 if empty.
+		uint32_t Infusions[3]; // Infusion or enrichment item IDs. 0 if empty.
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// GearData Struct
+	/// 	Payload of EV_RTAPI_GEAR_CHANGED. Always the PvE equipment, also in PvP.
+	///----------------------------------------------------------------------------------------------------
+	struct GearData
+	{
+		uint32_t Size;                                // sizeof(GearData) as raised. Fields are only ever appended.
+		uint32_t TemplateIndex;                       // 0-based equipment template tab.
+		GearSlot Slots[(uint32_t)EGearSlot::COUNT];   // Indexed by EGearSlot.
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// Guild Struct
+	///----------------------------------------------------------------------------------------------------
+	struct Guild
+	{
+		char ID[40];    // GUID as the official API writes it, e.g. "4BBB52AA-D768-4FC6-8EDE-C299F2822F0F".
+		char Name[140]; // UTF-8. Only known for the represented guild, otherwise empty: look it up with the official API, /v2/guild/:id.
+		char Tag[8];    // UTF-8, without brackets. Not known yet, always empty: look it up with the official API.
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// GuildList Struct
+	/// 	Payload of EV_RTAPI_GUILDS_CHANGED. Variable length: Guilds holds Count entries, Size covers them all.
+	///----------------------------------------------------------------------------------------------------
+	struct GuildList
+	{
+		uint32_t Size;      // Size of the whole payload in bytes, including all Count entries of Guilds.
+		uint32_t Count;     // Entries in Guilds, one per guild the account is in. May be 0.
+		Guild    Guilds[1]; // Count entries. Declared with one, the payload is as long as Count needs.
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// Attributes Struct
+	///----------------------------------------------------------------------------------------------------
+	struct Attributes
+	{
+		uint32_t Power;
+		uint32_t Precision;
+		uint32_t Toughness;
+		uint32_t Vitality;
+		uint32_t Ferocity;
+		uint32_t HealingPower;
+		uint32_t ConditionDamage;
+		uint32_t Concentration;
+		uint32_t Expertise;
+		uint32_t AgonyResistance;
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// EBreakbarState Enumeration
+	///----------------------------------------------------------------------------------------------------
+	enum class EBreakbarState : uint32_t
+	{
+		None, // No breakbar.
+		Active,
+		Recovering,
+		Immune
+	};
+
+	///----------------------------------------------------------------------------------------------------
 	/// RealTimeData Struct
 	///----------------------------------------------------------------------------------------------------
 	struct RealTimeData
@@ -377,7 +530,7 @@ namespace RTAPI
 		uint32_t        RESERVED2;
 
 		/* Player Data */
-		uint32_t        RESERVED1;
+		uint32_t        Size;               // sizeof(RealTimeData) as written. 0 on builds before Size existed. Check it before reading appended fields.
 		char            AccountName[140];
 		char            CharacterName[140];
 		float           CharacterPosition[3];
@@ -396,6 +549,31 @@ namespace RTAPI
 		/* Additions. Just slapped on. */
 		uint32_t        CharacterLevel;
 		uint32_t        CharacterEffectiveLevel;
+
+		/* Build & Gear. Full data in EV_RTAPI_BUILD_CHANGED and EV_RTAPI_GEAR_CHANGED. */
+		uint32_t        BuildTemplateIndex; // 0-based.
+		uint32_t        GearTemplateIndex;  // 0-based.
+
+		/* Attributes */
+		Attributes      BaseAttributes;      // From level and equipment, before scaling and effects.
+		Attributes      EffectiveAttributes; // As the hero panel shows them: scaled, including boons such as Might.
+
+		/* Target */
+		uint32_t        TargetID;            // Agent ID, same as the combat API. 0 if nothing is selected.
+		EAgentType      TargetType;
+		uint32_t        TargetSpeciesID;     // Character: Species ID; Gadget/AttackTarget: Gadget ID. Same as CombatAgent::SpeciesID.
+		EAttitude       TargetAttitude;
+		float           TargetHealth;        // Percent, 0-100. Currently whole numbers, as the game shows them.
+		float           TargetBarrier;       // Percent of max health, 0-100. Currently whole numbers, as the game shows them.
+		EBreakbarState  TargetBreakbarState;
+		float           TargetBreakbar;      // Percent, 0-100. Currently whole numbers, as the game shows them.
+
+		/* Guild */
+		char            RepresentedGuildID[40];    // Empty if not representing a guild.
+		char            RepresentedGuildName[140]; // UTF-8.
+
+		/* Synchronisation */
+		uint32_t        Frame; // Frame counter. Odd while RTAPI writes a frame, even when it is complete. See README, reading from other threads.
 	};
 }
 
