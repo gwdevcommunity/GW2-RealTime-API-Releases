@@ -14,6 +14,7 @@
 #define EV_RTAPI_GROUP_MEMBER_JOINED  "RTAPI_GROUP_MEMBER_JOINED"  // Payload is RTAPI::GroupMember*
 #define EV_RTAPI_GROUP_MEMBER_LEFT    "RTAPI_GROUP_MEMBER_LEFT"    // Payload is RTAPI::GroupMember*
 #define EV_RTAPI_GROUP_MEMBER_UPDATED "RTAPI_GROUP_MEMBER_UPDATED" // Payload is RTAPI::GroupMember*
+#define RTAPI_BOON_SLOTS              16                           // Length of the Boons arrays, indexed by RTAPI::EBoon. Room for boons the game may add.
 #define DL_RTAPI_GROUP                "RTAPI_GROUP"                // DataLink is RTAPI::RealTimeGroupData struct. Frame-synchronized like DL_RTAPI.
 
 #define EV_RTAPI_BUILD_CHANGED        "RTAPI_BUILD_CHANGED"        // Payload is RTAPI::BuildData*. Raised on change, and to addons loaded later.
@@ -170,12 +171,49 @@ namespace RTAPI
 	};
 
 	///----------------------------------------------------------------------------------------------------
+	/// EVitalState Enumeration
+	///----------------------------------------------------------------------------------------------------
+	enum class EVitalState : uint32_t
+	{
+		Unknown,  // Not in the player's instance.
+		Alive,
+		Downed,
+		Defeated
+	};
+
+	///----------------------------------------------------------------------------------------------------
+	/// EBoon Enumeration
+	/// 	Index into the Boons arrays. Only ever appended.
+	///----------------------------------------------------------------------------------------------------
+	enum class EBoon : uint32_t
+	{
+		Aegis,
+		Alacrity,
+		Fury,
+		Might,
+		Protection,
+		Quickness,
+		Regeneration,
+		Resistance,
+		Resolution,
+		Stability,
+		Swiftness,
+		Vigor,
+		COUNT
+	};
+
+	///----------------------------------------------------------------------------------------------------
 	/// GroupMemberVitals Struct
 	///----------------------------------------------------------------------------------------------------
 	struct GroupMemberVitals
 	{
-		char     AccountName[140]; // Matches GroupMember::AccountName.
-		float    Health;           // Percent, 0-100. Currently whole numbers, as the game shows them. 0 if not in the player's instance.
+		char        AccountName[140];         // Matches GroupMember::AccountName.
+		float       Health;                   // Percent, 0-100. Currently whole numbers, as the game shows them. 0 if not in the player's instance.
+		EVitalState State;
+		uint32_t    Profession;               // 1-9 = Profession; 0 Unknown, e.g. logged out.
+		uint32_t    EliteSpecialization;      // Third spec ID, not necessarily elite; 0 if unknown or not in the player's instance.
+		uint32_t    HasBoons : 1;             // Boons are visible: the player's own party, or own squad subgroup, as the game shows them. Otherwise Boons is all 0.
+		uint8_t     Boons[RTAPI_BOON_SLOTS];  // Stacks per EBoon, 0 if inactive. Might and Stability count their stacks, the others are 1 while active.
 	};
 
 	///----------------------------------------------------------------------------------------------------
@@ -571,6 +609,9 @@ namespace RTAPI
 		/* Guild */
 		char            RepresentedGuildID[40];    // Empty if not representing a guild.
 		char            RepresentedGuildName[140]; // UTF-8.
+
+		/* Boons */
+		uint8_t         Boons[RTAPI_BOON_SLOTS]; // The player's own boons. Stacks per EBoon, 0 if inactive. Might and Stability count their stacks, the others are 1 while active.
 
 		/* Synchronisation */
 		uint32_t        Frame; // Frame counter. Odd while RTAPI writes a frame, even when it is complete. See README, reading from other threads.

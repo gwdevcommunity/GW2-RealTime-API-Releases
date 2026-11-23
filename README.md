@@ -101,6 +101,11 @@ Each `GroupMember` also carries `IsAlive` and `IsDowned` (only valid if `IsInIns
 A change to any of them raises `EV_RTAPI_GROUP_MEMBER_UPDATED`.
 
 Health is read every frame, so it is not an event but its own DataLink, `DL_RTAPI_GROUP` with a `RealTimeGroupData` struct.
+Each entry also has the member's state (`EVitalState`: not in the instance, alive, downed or defeated), profession, elite specialization and active boons.
+
+#### Boons
+Boons are stacks per `EBoon` in an array of `RTAPI_BOON_SLOTS`: `0` if inactive, the stack count for Might and Stability, `1` for the other boons while active. Conditions and other effects are not included.
+A member's boons are only filled for your own party or your own squad subgroup, as the game shows them; `HasBoons` says whether they are. Your own boons are in `RealTimeData::Boons`.
 Entries are matched to `GroupMember` by account name. Health is a percentage from `0` to `100` as a `float`, `0` for members outside the player's instance.
 Look members up by name every frame, never keep an index: the DataLink follows the presented frame, while the member events are raised in real time, so a member who just joined can be missing for a few frames, and one who just left can still be listed.
 
